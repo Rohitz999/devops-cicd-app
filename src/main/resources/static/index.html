@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps Mega Project 🚀</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1000px;
+    width: 100%;
+    text-align: center;
+    animation: fadeIn 1s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    background: linear-gradient(90deg, #00d4ff, #7b2ff7, #f107a3, #00d4ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 6s ease infinite;
+    margin-bottom: 15px;
+    font-weight: 800;
+  }
+
+  @keyframes gradient {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  .subtitle {
+    color: #b8b8d1;
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 20px;
+    color: #00d4ff;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 40px 0;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 25px 20px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(0, 212, 255, 0.5);
+    box-shadow: 0 15px 40px rgba(0, 212, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .card .icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .card .label {
+    color: #8888aa;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .card .value {
+    color: #00d4ff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    word-break: break-word;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+  }
+
+  .links a {
+    display: inline-block;
+    padding: 12px 24px;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 10px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+
+  .links a:hover {
+    background: #00d4ff;
+    color: #0f0c29;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 212, 255, 0.4);
+  }
+
+  footer {
+    margin-top: 60px;
+    color: #666688;
+    font-size: 0.85rem;
+  }
+
+  footer span {
+    color: #00d4ff;
+    font-weight: 600;
+  }
+
+  .pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #00ff88;
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 10px #00ff88;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  .tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 40px;
+  }
+
+  .tech-stack span {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #b8b8d1;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">● DEVOPS MEGA PROJECT</div>
+    <h1>CI/CD Pipeline Working 🚀</h1>
+    <p class="subtitle">
+      <span class="pulse"></span>
+      Live Application · End-to-End DevOps Automation
+    </p>
+
+    <div class="cards">
+      <div class="card" onclick="fetchStatus('/health', this)">
+        <span class="icon">💚</span>
+        <div class="label">Health</div>
+        <div class="value" id="health-value">Checking...</div>
+      </div>
+
+      <div class="card" onclick="fetchStatus('/version', this)">
+        <span class="icon">📦</span>
+        <div class="label">Version</div>
+        <div class="value" id="version-value">Loading...</div>
+      </div>
+
+      <div class="card">
+        <span class="icon">🌐</span>
+        <div class="label">Host</div>
+        <div class="value" id="host-value">—</div>
+      </div>
+
+      <div class="card">
+        <span class="icon">⏱️</span>
+        <div class="label">Page Loaded</div>
+        <div class="value" id="time-value">—</div>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="/health" target="_blank">💚 /health</a>
+      <a href="/version" target="_blank">📦 /version</a>
+      <a href="/actuator/health" target="_blank">🔧 /actuator/health</a>
+      <a href="/actuator/info" target="_blank">ℹ️ /actuator/info</a>
+    </div>
+
+    <div class="tech-stack">
+      <span>☕ Spring Boot</span>
+      <span>🐳 Docker</span>
+      <span>⚙️ Jenkins</span>
+      <span>📊 SonarQube</span>
+      <span>🛡️ Trivy</span>
+      <span>🐙 ArgoCD</span>
+      <span>☸️ K3s</span>
+    </div>
+
+    <footer>
+      Built with <span>❤️</span> for the DevOps Mega Project · v1.0.0
+    </footer>
+  </div>
+
+<script>
+  async function fetchStatus(endpoint, card) {
+    try {
+      const res = await fetch(endpoint);
+      const text = await res.text();
+      card.querySelector('.value').textContent = text;
+    } catch (e) {
+      card.querySelector('.value').textContent = 'Error';
+    }
+  }
+
+  // Auto-load health + version
+  fetchStatus('/health', document.getElementById('health-value').closest('.card'));
+  fetchStatus('/version', document.getElementById('version-value').closest('.card'));
+
+  // Fill host + time
+  document.getElementById('host-value').textContent = window.location.host;
+  document.getElementById('time-value').textContent = new Date().toLocaleTimeString();
+</script>
+</body>
+</html>
