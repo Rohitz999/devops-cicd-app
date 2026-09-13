@@ -11,7 +11,8 @@ pipeline {
         DOCKER_HUB    = "rohitdockerhub01"
         IMAGE_TAG     = "${params.IMAGE_TAG}"
         SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
-        GITOPS_REPO   = "https://github.com/YOUR-GITHUB-USERNAME/devops-mega-gitops.git"
+        GITOPS_REPO   = "https://github.com/Rohitz999/devops-mega-gitops.git"
+        JENKINS_URL   = "https://jenkins.mechnomax.co.in"
     }
 
     parameters {
@@ -76,11 +77,13 @@ pipeline {
                           --name trivy-scan \
                           -v /var/run/docker.sock:/var/run/docker.sock \
                           -v /var/lib/jenkins/.trivy-cache:/root/.cache/trivy \
+                          -v /var/lib/jenkins/.trivy-tmp:/tmp \
                           -v \$(pwd)/reports:/reports \
                           aquasec/trivy:latest image \
                           ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
                           --no-progress \
                           --scanners vuln \
+                          --skip-java-db-update \
                           --exit-code 0 \
                           --severity HIGH,CRITICAL \
                           --format table \
@@ -119,22 +122,8 @@ pipeline {
         stage('Trigger GitOps Update') {
             steps {
                 sh """
-                    curl -X POST "http://jenkins.local/job/gitops-devops-mega-project/build?token=gitops-token" || true
+                    curl -X POST "${JENKINS_URL}/job/devops-mega-gitops/buildWithParameters?token=gitops-token&IMAGE_TAG=${IMAGE_TAG}" || true
                 """
-            }
-        }
-
-        stage('Cleanup Artifacts') {
-            steps {
-                script {
-                    sh """
-                        docker rmi ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} 2>/dev/null || true
-                        docker rmi ${DOCKER_HUB}/${APP_NAME}:latest 2>/dev/null || true
-                        docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
-                        docker image prune -f 2>/dev/null || true
-                        echo "✅ Cleanup completed"
-                    """
-                }
             }
         }
     }
@@ -144,6 +133,9 @@ pipeline {
             script {
                 sh """
                     docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
+                    docker rmi ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} 2>/dev/null || true
+                    docker rmi ${DOCKER_HUB}/${APP_NAME}:latest 2>/dev/null || true
+                    echo "✅ Cleanup completed"
                 """
             }
             cleanWs()
