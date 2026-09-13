@@ -11,8 +11,7 @@ pipeline {
         DOCKER_HUB    = "rohitdockerhub01"
         IMAGE_TAG     = "${params.IMAGE_TAG}"
         SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
-        DOCKER_CREDS  = credentials('dockerhub-creds')
-        GITOPS_REPO   = "https://github.com/your-username/devops-mega-gitops.git"
+        GITOPS_REPO   = "https://github.com/YOUR-GITHUB-USERNAME/devops-mega-gitops.git"
     }
 
     parameters {
@@ -69,33 +68,96 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh """
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL \
-                    ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} || true
-                """
+                script {
+                    sh """
+                        mkdir -p reports
+
+                        docker run --rm \
+                          --name trivy-scan \
+                          -v /var/run/docker.sock:/var/run/docker.sock \
+                          -v \$(pwd)/reports:/reports \
+                          aquasec/trivy:latest image \
+                          ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
+                          --no-progress \
+                          --scanners vuln \
+                          --exit-code 0 \
+                          --severity HIGH,CRITICAL \
+                          --format json \
+                          --output /reports/trivy-report.json
+
+                        docker run --rm \
+                          --name trivy-scan-table \
+                          -v /var/run/docker.sock:/var/run/docker.sock \
+                          -v \$(pwd)/reports:/reports \
+                          aquasec/trivy:latest image \
+                          ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
+                          --no-progress \
+                          --scanners vuln \
+                          --exit-code 0 \
+                          --severity HIGH,CRITICAL \
+                          --format table \
+                          --output /reports/trivy-report.txt
+
+                        docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
+
+                        echo "===== Trivy Scan Report ====="
+                        cat reports/trivy-report.txt || echo "No report file"
+                        echo "============================="
+                    """
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'reports/*', allowEmptyArchive: true
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh """
-                    echo \$DOCKER_CREDS_PSW | docker login -u \$DOCKER_CREDS_USR --password-stdin
-                    docker push ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG}
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG}
+                    """
+                }
             }
         }
 
         stage('Trigger GitOps Update') {
             steps {
                 sh """
-                    curl -X POST "http://jenkins.local/job/gitops-devops-mega-project/build?token=gitops-token"
+                    curl -X POST "http://jenkins.local/job/gitops-devops-mega-project/build?token=gitops-token" || true
                 """
+            }
+        }
+
+        stage('Cleanup Artifacts') {
+            steps {
+                script {
+                    sh """
+                        docker rmi ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} 2>/dev/null || true
+                        docker rmi ${DOCKER_HUB}/${APP_NAME}:latest 2>/dev/null || true
+                        docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
+                        docker image prune -f 2>/dev/null || true
+                        echo "✅ Cleanup completed"
+                    """
+                }
             }
         }
     }
 
     post {
         always {
+            script {
+                sh """
+                    docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
+                """
+            }
             cleanWs()
         }
         success {
