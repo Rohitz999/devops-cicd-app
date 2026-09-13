@@ -127,20 +127,28 @@ pipeline {
                     passwordVariable: 'JENKINS_API_TOKEN'
                 )]) {
                     sh """
-                        echo "Triggering GitOps pipeline with IMAGE_TAG=${IMAGE_TAG}..."
+                        echo "===== Triggering GitOps Pipeline ====="
+                        echo "Target: ${JENKINS_URL}/job/devops-mega-gitops"
+                        echo "IMAGE_TAG: ${IMAGE_TAG}"
 
                         HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" \
-                          -u "\$JENKINS_USER:\$JENKINS_API_TOKEN" \
-                          -X POST "${JENKINS_URL}/job/devops-mega-gitops/buildWithParameters?token=gitops-token&IMAGE_TAG=${IMAGE_TAG}")
+                          --user "\$JENKINS_USER:\$JENKINS_API_TOKEN" \
+                          -X POST \
+                          -H 'cache-control: no-cache' \
+                          -H 'content-type: application/x-www-form-urlencoded' \
+                          --data "IMAGE_TAG=${IMAGE_TAG}" \
+                          "${JENKINS_URL}/job/devops-mega-gitops/buildWithParameters?token=gitops-token")
 
                         echo "HTTP response code: \$HTTP_CODE"
 
                         if [ "\$HTTP_CODE" = "201" ] || [ "\$HTTP_CODE" = "200" ]; then
                             echo "✅ GitOps pipeline triggered successfully"
                         else
-                            echo "⚠️ GitOps trigger returned HTTP \$HTTP_CODE (expected 201)"
+                            echo "❌ GitOps trigger failed with HTTP \$HTTP_CODE"
                             exit 1
                         fi
+
+                        echo "===== Trigger Completed ====="
                     """
                 }
             }
