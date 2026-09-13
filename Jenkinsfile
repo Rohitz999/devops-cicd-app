@@ -12,7 +12,7 @@ pipeline {
         IMAGE_TAG     = "${params.IMAGE_TAG}"
         SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
         DOCKER_CREDS  = credentials('dockerhub-creds')
-        GITOPS_REPO   = "https://github.com/your-username/devops-mega-gitops.git"
+        GITOPS_REPO   = "https://github.com/Rohitz999/devops-mega-gitops.git"
     }
 
     parameters {
