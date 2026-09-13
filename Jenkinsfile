@@ -75,19 +75,7 @@ pipeline {
                         docker run --rm \
                           --name trivy-scan \
                           -v /var/run/docker.sock:/var/run/docker.sock \
-                          -v \$(pwd)/reports:/reports \
-                          aquasec/trivy:latest image \
-                          ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
-                          --no-progress \
-                          --scanners vuln \
-                          --exit-code 0 \
-                          --severity HIGH,CRITICAL \
-                          --format json \
-                          --output /reports/trivy-report.json
-
-                        docker run --rm \
-                          --name trivy-scan-table \
-                          -v /var/run/docker.sock:/var/run/docker.sock \
+                          -v /var/lib/jenkins/.trivy-cache:/root/.cache/trivy \
                           -v \$(pwd)/reports:/reports \
                           aquasec/trivy:latest image \
                           ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
@@ -98,11 +86,11 @@ pipeline {
                           --format table \
                           --output /reports/trivy-report.txt
 
-                        docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
-
                         echo "===== Trivy Scan Report ====="
                         cat reports/trivy-report.txt || echo "No report file"
                         echo "============================="
+
+                        docker rm -f trivy-scan 2>/dev/null || true
                     """
                 }
             }
