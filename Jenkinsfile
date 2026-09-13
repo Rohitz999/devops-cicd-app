@@ -121,9 +121,28 @@ pipeline {
 
         stage('Trigger GitOps Update') {
             steps {
-                sh """
-                    curl -X POST "${JENKINS_URL}/job/devops-mega-gitops/buildWithParameters?token=gitops-token&IMAGE_TAG=${IMAGE_TAG}" || true
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'jenkins-api-token',
+                    usernameVariable: 'JENKINS_USER',
+                    passwordVariable: 'JENKINS_API_TOKEN'
+                )]) {
+                    sh """
+                        echo "Triggering GitOps pipeline with IMAGE_TAG=${IMAGE_TAG}..."
+
+                        HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" \
+                          -u "\$JENKINS_USER:\$JENKINS_API_TOKEN" \
+                          -X POST "${JENKINS_URL}/job/devops-mega-gitops/buildWithParameters?token=gitops-token&IMAGE_TAG=${IMAGE_TAG}")
+
+                        echo "HTTP response code: \$HTTP_CODE"
+
+                        if [ "\$HTTP_CODE" = "201" ] || [ "\$HTTP_CODE" = "200" ]; then
+                            echo "✅ GitOps pipeline triggered successfully"
+                        else
+                            echo "⚠️ GitOps trigger returned HTTP \$HTTP_CODE (expected 201)"
+                            exit 1
+                        fi
+                    """
+                }
             }
         }
     }
