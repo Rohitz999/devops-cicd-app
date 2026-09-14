@@ -7,16 +7,29 @@ pipeline {
     }
 
     environment {
+        // --- App identity ---
         APP_NAME      = "devops-mega-app"
+        RELEASE       = "1.0.0"
+
+        // --- DockerHub ---
         DOCKER_HUB    = "rohitdockerhub01"
-        IMAGE_TAG     = "${params.IMAGE_TAG}"
-        SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
-        DOCKER_CREDS  = credentials('dockerhub-creds')
+        IMAGE_NAME    = "${DOCKER_HUB}/${APP_NAME}"
+        IMAGE_TAG     = "${RELEASE}-${BUILD_NUMBER}"
+
+        // --- Integrations ---
         GITOPS_REPO   = "https://github.com/Rohitz999/devops-mega-gitops.git"
+        JENKINS_URL   = "https://jenkins.mechnomax.co.in"
+
+        // --- SonarQube ---
+        SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
     }
 
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(
+            name: 'OVERRIDE_TAG',
+            defaultValue: '',
+            description: 'Optional: manual tag override (leave empty for auto)'
+        )
     }
 
     options {
@@ -63,7 +76,15 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} ."
+                sh """
+                    echo "===== Building Docker Image ====="
+                    echo "Image: ${IMAGE_NAME}"
+                    echo "Tag:   ${IMAGE_TAG}"
+
+                    docker build \
+                      -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                      -t ${IMAGE_NAME}:latest .
+                """
             }
         }
 
@@ -80,7 +101,7 @@ pipeline {
                           -v /var/lib/jenkins/.trivy-tmp:/tmp \
                           -v \$(pwd)/reports:/reports \
                           aquasec/trivy:latest image \
-                          ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} \
+                          ${IMAGE_NAME}:${IMAGE_TAG} \
                           --no-progress \
                           --scanners vuln \
                           --skip-java-db-update \
@@ -113,7 +134,12 @@ pipeline {
                 )]) {
                     sh """
                         echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG}
+
+                        echo "===== Pushing: ${IMAGE_TAG} ====="
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+
+                        echo "===== Pushing: latest ====="
+                        docker push ${IMAGE_NAME}:latest
                     """
                 }
             }
@@ -160,18 +186,18 @@ pipeline {
             script {
                 sh """
                     docker rm -f trivy-scan trivy-scan-table 2>/dev/null || true
-                    docker rmi ${DOCKER_HUB}/${APP_NAME}:${IMAGE_TAG} 2>/dev/null || true
-                    docker rmi ${DOCKER_HUB}/${APP_NAME}:latest 2>/dev/null || true
+                    docker rmi ${IMAGE_NAME}:${IMAGE_TAG} 2>/dev/null || true
+                    docker rmi ${IMAGE_NAME}:latest 2>/dev/null || true
                     echo "✅ Cleanup completed"
                 """
             }
             cleanWs()
         }
         success {
-            echo "✅ Pipeline succeeded for ${APP_NAME}:${IMAGE_TAG}"
+            echo "✅ Pipeline succeeded: ${IMAGE_NAME}:${IMAGE_TAG}"
         }
         failure {
-            echo "❌ Pipeline failed"
+            echo "❌ Pipeline failed: ${IMAGE_NAME}:${IMAGE_TAG}"
         }
     }
 }
