@@ -22,6 +22,10 @@ pipeline {
 
         // --- SonarQube ---
         SONAR_TOKEN   = credentials('jenkins-sonarqube-token')
+
+        // --- Email Notification ---
+        EMAIL_TO      = "rohitvishwakarma8082@gmail.com"
+        EMAIL_FROM    = "rohitvishwakarma8082@gmail.com"
     }
 
     parameters {
@@ -193,11 +197,63 @@ pipeline {
             }
             cleanWs()
         }
+
         success {
             echo "✅ Pipeline succeeded: ${IMAGE_NAME}:${IMAGE_TAG}"
+
+            // ---- Email Notification (SUCCESS) ----
+            emailext(
+                subject: "✅ [SUCCESS] ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                    <html>
+                    <body style="font-family: Arial, sans-serif;">
+                      <h2 style="color: #00c853;">✅ Build Succeeded</h2>
+                      <table style="border-collapse: collapse; padding: 8px;">
+                        <tr><td style="padding: 6px;"><b>Job</b></td><td style="padding: 6px;">${env.JOB_NAME}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Build</b></td><td style="padding: 6px;">#${env.BUILD_NUMBER}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Image</b></td><td style="padding: 6px;">${IMAGE_NAME}:${IMAGE_TAG}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Duration</b></td><td style="padding: 6px;">${currentBuild.durationString}</td></tr>
+                      </table>
+                      <p>
+                        <a href="${env.BUILD_URL}" style="background: #00d4ff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Build</a>
+                        <a href="https://hub.docker.com/r/rohitdockerhub01/devops-mega-app/tags" style="background: #7b2ff7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">DockerHub</a>
+                        <a href="https://app.mechnomax.co.in" style="background: #00c853; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Live App</a>
+                      </p>
+                    </body>
+                    </html>
+                """,
+                to: "${EMAIL_TO}",
+                from: "${EMAIL_FROM}",
+                mimeType: 'text/html'
+            )
         }
+
         failure {
             echo "❌ Pipeline failed: ${IMAGE_NAME}:${IMAGE_TAG}"
+
+            // ---- Email Notification (FAILURE) ----
+            emailext(
+                subject: "❌ [FAILED] ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                    <html>
+                    <body style="font-family: Arial, sans-serif;">
+                      <h2 style="color: #d50000;">❌ Build Failed</h2>
+                      <table style="border-collapse: collapse; padding: 8px;">
+                        <tr><td style="padding: 6px;"><b>Job</b></td><td style="padding: 6px;">${env.JOB_NAME}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Build</b></td><td style="padding: 6px;">#${env.BUILD_NUMBER}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Image</b></td><td style="padding: 6px;">${IMAGE_NAME}:${IMAGE_TAG}</td></tr>
+                        <tr><td style="padding: 6px;"><b>Failed Stage</b></td><td style="padding: 6px;">${env.STAGE_NAME ?: 'Unknown'}</td></tr>
+                      </table>
+                      <p>
+                        <a href="${env.BUILD_URL}console" style="background: #d50000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Console Output</a>
+                      </p>
+                    </body>
+                    </html>
+                """,
+                to: "${EMAIL_TO}",
+                from: "${EMAIL_FROM}",
+                mimeType: 'text/html'
+            )
         }
     }
 }
